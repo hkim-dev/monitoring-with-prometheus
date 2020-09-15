@@ -1,0 +1,77 @@
+groups:
+  - name: beehive_alert_rules
+    rules:
+
+      - alert: InstanceDown
+        expr: up == 0
+        for: 1m
+        annotations:
+          title: 'Instance {{ $labels.instance }} down'
+          description: >-
+            {{ $labels.instance }} of job {{ $labels.job }} has been down for
+            more than 1 minute.
+        labels:
+          severity: critical
+      - alert: HostCPUUtilization  
+        expr: 100 - (avg by(instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 70
+        for: 5m
+        labels:
+        severity: warning
+        annotations:
+          title: 'High CPU Utilization'
+          description: 'High CPU utilization detected for instance {{ $labels.instance_id
+          }} tagged as: {{ $labels.instance_name_tag }}, the utilization is currently:
+          {{ $value }}%'
+        summary: CPU Utilization Alert
+      
+      - alert: DiskSpace10%Free
+        expr: 100 - ((node_filesystem_avail_bytes{mountpoint="/",fstype!="rootfs"} * 100) / node_filesystem_size_bytes{mountpoint="/",fstype!="rootfs"}) >= 90
+        labels:
+        severity: moderate
+        annotations:
+          title: "Instance {{ $labels.instance }} low on disk space"
+          description: "{{ $labels.instance }} has only {{ $value }}% free."
+        summary: "Instance {{ $labels.instance }} is low on disk space"
+      - alert: HostUnusualNetworkThroughputIn
+        expr: sum by (instance) (irate(node_network_receive_bytes_total[2m])) / 1024 / 1024 > 100
+        for: 5m
+        labels:
+        severity: warning
+        annotations:
+          title: "Host Unusual Network Throughput In"
+          description: "Host network interfaces are probably receiving too much data (> 100 MB/s)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+        summary: "Host unusual network throughput in (instance {{ $labels.instance }})"
+      - alert: HostOutOfMemory 
+        expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10
+        for: 5m
+        labels:
+        severity: warning
+        annotations:
+          title: Host Out of Memory
+          description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS: {{ $labels }}"
+        summary: "Host out of memory (instance {{ $labels.instance }})"
+
+      - alert: TrainingDataPipelineStopped
+        expr: delta(waggle_training_data_total:sum[4h]) <= 0
+        for: 12h
+        labels:
+          severity: page
+        annotations:
+          summary: Entire training data pipeline stopped.
+      - alert: TrainingDataStoppedForNode
+        expr: (sum without (class) (delta(waggle_training_data_total[1d])) == 0) and (waggle_training_data_is_enabled == 1)
+        for: 0s
+        labels:
+          severity: page
+        annotations:
+          summary: "Training data {{$labels.resource}} stopped for node {{$labels.node_id}}."
+      - alert: GettingBadImages
+        expr: delta(waggle_training_data_total{class="bad"}[1h]) > 0
+        for: 0s
+        labels:
+          severity: page
+        annotations:
+          summary: "Getting bad images from node {{$labels.node_id}}."
+          good_link: "https://web.lcrc.anl.gov/public/waggle/private/training_data/aot_audio_and_images/{{$labels.resource}}/{{$labels.node_id}}/"
+          bad_link: "https://web.lcrc.anl.gov/public/waggle/private/training_data/aot_audio_and_images/bad_{{$labels.resource}}/{{$labels.node_id}}/"
+

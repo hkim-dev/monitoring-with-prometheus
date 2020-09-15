@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-deployment
+  namespace: sage
+spec:
+  
+  replicas: 1
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.20.1
+          ports:
+            - containerPort: 9090
+              name: metrics
+          args: 
+            - --web.external-url=http://localhost:8000/prometheus/
+            - --web.route-prefix=/
+            - --config.file=/etc/prometheus/prometheus.yml
+            - --storage.tsdb.path=/prometheus
+            - --web.console.libraries=/etc/prometheus/console_libraries
+            - --web.console.templates=/etc/prometheus/consoles
+          volumeMounts:
+            - name: prometheus-config-volume
+              mountPath: /etc/prometheus/prometheus.yml
+              subPath: prometheus.yml
+            - name: prometheus-alerting-rules-volume
+              mountPath: /etc/prometheus/alerting_rules.yml
+              subPath: alerting_rules.yml
+            - name: prometheus-recording-rules-volume
+              mountPath: /etc/prometheus/recording_rules.yml
+              subPath: recording_rules.yml
+      volumes:
+        - name: prometheus-config-volume
+          configMap:
+            name: prometheus-config
+        - name: prometheus-alerting-rules-volume
+          configMap:
+            name: prometheus-alerting-rules
+        - name: prometheus-recording-rules-volume
+          configMap:
+            name: prometheus-recording-rules
+        - name: prometheus-storage-volume
+          emptyDir: {}
+---
+kind: Service
+apiVersion: v1
+metadata:
+  name: prometheus-service
+  namespace: sage
+spec:
+  selector:
+    app: prometheus
+  ports:
+  - protocol: TCP
+    name: metrics
+    port: 9090
+    targetPort: 9090

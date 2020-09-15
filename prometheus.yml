@@ -1,0 +1,54 @@
+global:
+ # How frequently to scrape targets
+ scrape_interval:     10s
+ # How frequently to evaluate rules
+ evaluation_interval: 1m
+
+
+# Rules and alerts are read from the specified file(s)
+rule_files:
+ - "alerting_rules.yml" 
+ - "recording_rules.yml"
+
+# Alerting specifies settings related to the Alertmanager
+alerting:
+ alertmanagers:
+   - static_configs:
+     - targets:
+       - alertmanager-service:9093
+
+# A list of scrape configurations that specifies a set of
+# targets and parameters describing how to scrape them.
+scrape_configs:
+ - job_name: 'beehive_node_exporter'
+   metrics_path: '/node-exporter'
+   scrape_interval: 5s
+   static_configs:
+     - targets:
+       - beehive1.mcs.anl.gov
+ - job_name: 'waggle_training_data'
+   metrics_path: '/public/waggle/private/training_data/metrics.php'
+   scheme: 'https'
+   static_configs:
+     - targets: ['web.lcrc.anl.gov:443']
+#  - job_name: 'beehive_data_loader'
+#    metrics_path: '/data-loader/'
+#    scrape_interval: 5s
+#    static_configs:
+#     - targets:
+#       - beehive1.mcs.anl.gov:80
+ - job_name: 'sage_ecr'
+   scrape_interval: 5s
+   static_configs:
+     - targets:
+       - ecr-api:5000
+ - job_name: 'sage_storage_api'
+   scrape_interval: 5s
+   static_configs:
+     - targets:
+       - 132.249.238.42
+#  - job_name: 'wrong_target' # for testing
+#    scrape_interval: 5s
+#    static_configs:
+#      - targets:
+#        - localhost:1234

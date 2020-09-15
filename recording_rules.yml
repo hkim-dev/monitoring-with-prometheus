@@ -1,0 +1,14 @@
+groups:
+  - name: data-loader-rec-rules
+    rules:
+    - record: dataloader_message_counter_total:sum
+      expr: sum(dataloader_message_counter_total)
+
+    - record: dataloader_error_counter_total:sum
+      expr: sum(dataloader_error_counter_total)
+
+    - record: waggle_training_data_total:sum
+      expr: sum(waggle_training_data_total)
+
+    - record: resource:waggle_training_data_total:sum
+      expr: sum(waggle_training_data_total) by (resource)
